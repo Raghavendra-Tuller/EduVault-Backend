@@ -27,6 +27,7 @@ db.connect((err) => {
     console.error("❌ MySQL connection failed:", err.message);
   } else {
     console.log("✅ Connected to MySQL database");
+    console.log("Connecting to DB host:", process.env.DB_HOST);
   }
 });
 
@@ -44,3 +45,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
+
