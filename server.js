@@ -2,9 +2,9 @@
 
 const express = require("express");
 const cors = require("cors");
-const mysql = require("mysql2");
 const path = require("path");
 require("dotenv").config();
+const db = require("./db"); // ✅ import the single shared DB connection
 
 const app = express();
 
@@ -13,37 +13,31 @@ app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ MySQL connection using environment variables
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+// ✅ Confirm DB connection was established
+// (This runs when db.js connects successfully)
+app.get("/testdb", (req, res) => {
+  db.query("SELECT NOW() AS time", (err, results) => {
+    if (err) {
+      console.error("❌ Database test failed:", err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    console.log("✅ Database test query successful:", results);
+    res.json({ success: true, time: results[0].time });
+  });
 });
 
-// ✅ Connect to MySQL and handle errors
-db.connect((err) => {
-  if (err) {
-    console.error("❌ MySQL connection failed:", err.message);
-  } else {
-    console.log("✅ Connected to MySQL database");
-    console.log("Connecting to DB host:", process.env.DB_HOST);
-  }
-});
-
-// ✅ Routes
+// ✅ API routes
 const notesRoutes = require("./routes/notes");
 app.use("/api/notes", notesRoutes);
 
-// ✅ Default route (optional)
+// ✅ Default route
 app.get("/", (req, res) => {
   res.send("🚀 EduVault backend is running...");
 });
 
 // ✅ Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
-
-
