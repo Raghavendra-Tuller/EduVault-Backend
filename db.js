@@ -1,3 +1,4 @@
+// backend/db.js
 const mysql = require("mysql2");
 require("dotenv").config();
 
@@ -9,6 +10,8 @@ console.log("🔍 Loaded DB env:", {
   port: process.env.DB_PORT,
 });
 
+console.log("⏳ Attempting to connect to MySQL...");
+
 const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -19,16 +22,16 @@ const db = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   ssl: {
-    require: true,
-    rejectUnauthorized: false,
+    require: true,               // ✅ Required for Railway proxy
+    rejectUnauthorized: false,   // ✅ Prevent SSL handshake issues
   },
 });
 
 db.getConnection((err, conn) => {
   if (err) {
-    console.error("❌ Database connection failed:", err);
+    console.error("❌ Database connection failed:", err.message);
   } else {
-    console.log("✅ Connected to MySQL successfully!");
+    console.log("✅ Connected to MySQL database successfully!");
     conn.release();
   }
 });
