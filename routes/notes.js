@@ -1,66 +1,57 @@
 // backend/routes/notes.js
-
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
-const mysql = require("mysql2");
+const Note = require("../models/Note");
 
 const router = express.Router();
 
-// ✅ MySQL connection
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "Raghu@2634",
-  database: "eduvault",
-});
-
-// ✅ Multer storage setup
+// Configure Multer storage
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../uploads"));
+  destination: function (req, file, cb) {
+    cb(null, "uploads/"); // store in uploads folder
   },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
+  filename: function (req, file, cb) {
+    const uniqueName = Date.now() + path.extname(file.originalname);
+    cb(null, uniqueName);
   },
 });
 
-const upload = multer({ storage });
-
-// ✅ Upload route
-router.post("/upload", upload.single("file"), (req, res) => {
-  const { subject, description } = req.body;
-
-  if (!req.file) {
-    return res.status(400).json({ success: false, message: "No file uploaded" });
+// File filter (only PDFs)
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype === "application/pdf") {
+    cb(null, true);
+  } else {
+    cb(new Error("Only PDF files are allowed!"), false);
   }
+};
 
-  const filename = req.file.filename;
-  const filepath = `/uploads/${filename}`;
+const upload = multer({ storage: storage, fileFilter: fileFilter });
 
-  db.query(
-    "INSERT INTO uploads (subject, description, filename, filepath) VALUES (?, ?, ?, ?)",
-    [subject, description, filename, filepath],
-    (err) => {
-      if (err) {
-        console.error("❌ Database error:", err);
-        return res.status(500).json({ success: false, message: "Database error" });
-      }
-      res.json({ success: true, file: filepath });
-    }
-  );
+// ✅ GET all notes
+router.get("/", async (req, res) => {
+  try {
+    const notes = await Note.find();
+    res.json(notes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// ✅ Fetch uploaded files by subject
-router.get("/:subject", (req, res) => {
-  const { subject } = req.params;
-  db.query("SELECT * FROM uploads WHERE subject = ?", [subject], (err, results) => {
-    if (err) {
-      console.error("❌ Database error:", err);
-      return res.status(500).json({ success: false, message: "Database error" });
-    }
-    res.json(results);
-  });
+// ✅ POST note with PDF upload
+router.post("/", upload.single("file"), async (req, res) => {
+  try {
+    const { title, content } = req.body;
+    const newNote = new Note({
+      title,
+      content,
+      filePath: req.file ? req.file.path : null, // store PDF path
+    });
+    await newNote.save();
+    res.json(newNote);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
