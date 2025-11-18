@@ -28,7 +28,7 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage: storage, fileFilter: fileFilter });
 
-// ✅ GET all notes
+// GET all notes
 router.get("/", async (req, res) => {
   try {
     const notes = await Note.find();
@@ -38,7 +38,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ✅ POST note with PDF upload
+// POST note with PDF upload
 router.post("/", upload.single("file"), async (req, res) => {
   try {
     const { title, content } = req.body;
