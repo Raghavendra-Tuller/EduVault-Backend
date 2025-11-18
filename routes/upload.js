@@ -23,7 +23,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// ✅ Upload file with subject name
+// Upload file with subject name
 router.post("/", upload.single("file"), (req, res) => {
   try {
     const subject = req.body.subject || "General";
@@ -51,7 +51,7 @@ router.post("/", upload.single("file"), (req, res) => {
   }
 });
 
-// ✅ Get files by subject
+// Get files by subject
 router.get("/:subject", (req, res) => {
   const uploadsFile = path.join(__dirname, "../uploads/uploads.json");
   if (!fs.existsSync(uploadsFile)) return res.json([]);
